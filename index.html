@@ -116,9 +116,8 @@
 </div>
 
 <script>
-  // CHANGE THESE TWO VALUES TO YOUR GITHUB USERNAME & REPOSITORY NAME
-  const GITHUB_USER = "YOUR_GITHUB_USERNAME";
-  const GITHUB_REPO = "YOUR_REPO_NAME";
+  const GITHUB_USER = "WORLDS194";
+  const GITHUB_REPO = "legendary-fishstick";
 
   function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
@@ -163,7 +162,7 @@
       });
 
       items.forEach(item => {
-        // Skip index.html itself from showing up
+        // Hide index.html from directory list
         if (item.name === 'index.html' && !path) return;
 
         const tr = document.createElement('tr');
@@ -175,8 +174,9 @@
             <td class="size">-</td>
           `;
         } else {
+          const filePath = path ? `${path}/${item.name}` : item.name;
           tr.innerHTML = `
-            <td><span class="icon">📄</span><a href="${item.name}" download>${item.name}</a></td>
+            <td><span class="icon">📄</span><a href="${filePath}" download>${item.name}</a></td>
             <td>File</td>
             <td class="size">${formatBytes(item.size)}</td>
           `;
