@@ -133,17 +133,15 @@
     
     document.getElementById('path-header').innerText = `Index of /${path}`;
 
-    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}`;
-
+  const url = `https://api.github.com/repos/WORLDS194/legendary-fishstick/contents/${path}`;
     try {
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch contents');
+      if (!res.ok) throw new Error('Failed to fetch directory list');
       const items = await res.json();
 
       const tbody = document.getElementById('file-list');
       tbody.innerHTML = '';
 
-      // Add parent directory link if inside a subdirectory
       if (path) {
         const parentPath = path.split('/').slice(0, -1).join('/');
         const tr = document.createElement('tr');
@@ -155,14 +153,12 @@
         tbody.appendChild(tr);
       }
 
-      // Sort: Folders first, then Files
       items.sort((a, b) => {
         if (a.type === b.type) return a.name.localeCompare(b.name);
         return a.type === 'dir' ? -1 : 1;
       });
 
       items.forEach(item => {
-        // Hide index.html from directory list
         if (item.name === 'index.html' && !path) return;
 
         const tr = document.createElement('tr');
@@ -176,7 +172,7 @@
         } else {
           const filePath = path ? `${path}/${item.name}` : item.name;
           tr.innerHTML = `
-            <td><span class="icon">📄</span><a href="${filePath}" download>${item.name}</a></td>
+            <td><span class="icon">📄</span><a href="/${filePath}" download>${item.name}</a></td>
             <td>File</td>
             <td class="size">${formatBytes(item.size)}</td>
           `;
@@ -187,7 +183,7 @@
       document.getElementById('loading').style.display = 'none';
       document.getElementById('file-table').style.display = 'table';
     } catch (err) {
-      document.getElementById('loading').innerText = 'Error loading directory contents or path does not exist.';
+      document.getElementById('loading').innerText = 'Error loading directory contents.';
     }
   }
 
