@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Index of /</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --link: #58a6ff;
+      --subtext: #8b949e;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: #21262d;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-family: monospace;
+      color: var(--link);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1.5rem;
+      text-align: left;
+    }
+
+    th {
+      border-bottom: 1px solid var(--border);
+      color: var(--subtext);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tr:not(:last-child) td {
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover td {
+      background-color: rgba(177, 186, 196, 0.04);
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .icon {
+      margin-right: 0.5rem;
+    }
+
+    .size {
+      color: var(--subtext);
+      font-family: monospace;
+    }
+
+    #loading {
+      padding: 2rem;
+      text-align: center;
+      color: var(--subtext);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1 id="path-header">Index of /</h1>
+  </header>
+  <div id="loading">Loading directory listing...</div>
+  <table id="file-table" style="display: none;">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Size</th>
+      </tr>
+    </thead>
+    <tbody id="file-list"></tbody>
+  </table>
+</div>
+
+<script>
+  // CHANGE THESE TWO VALUES TO YOUR GITHUB USERNAME & REPOSITORY NAME
+  const GITHUB_USER = "YOUR_GITHUB_USERNAME";
+  const GITHUB_REPO = "YOUR_REPO_NAME";
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  async function loadDirectory() {
+    const params = new URLSearchParams(window.location.search);
+    const path = params.get('path') || '';
+    
+    document.getElementById('path-header').innerText = `Index of /${path}`;
+
+    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}`;
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch contents');
+      const items = await res.json();
+
+      const tbody = document.getElementById('file-list');
+      tbody.innerHTML = '';
+
+      // Add parent directory link if inside a subdirectory
+      if (path) {
+        const parentPath = path.split('/').slice(0, -1).join('/');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="icon">📁</span><a href="?path=${encodeURIComponent(parentPath)}">..</a></td>
+          <td>Directory</td>
+          <td class="size">-</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      // Sort: Folders first, then Files
+      items.sort((a, b) => {
+        if (a.type === b.type) return a.name.localeCompare(b.name);
+        return a.type === 'dir' ? -1 : 1;
+      });
+
+      items.forEach(item => {
+        // Skip index.html itself from showing up
+        if (item.name === 'index.html' && !path) return;
+
+        const tr = document.createElement('tr');
+        if (item.type === 'dir') {
+          const dirPath = path ? `${path}/${item.name}` : item.name;
+          tr.innerHTML = `
+            <td><span class="icon">📁</span><a href="?path=${encodeURIComponent(dirPath)}">${item.name}/</a></td>
+            <td>Directory</td>
+            <td class="size">-</td>
+          `;
+        } else {
+          tr.innerHTML = `
+            <td><span class="icon">📄</span><a href="${item.name}" download>${item.name}</a></td>
+            <td>File</td>
+            <td class="size">${formatBytes(item.size)}</td>
+          `;
+        }
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('file-table').style.display = 'table';
+    } catch (err) {
+      document.getElementById('loading').innerText = 'Error loading directory contents or path does not exist.';
+    }
+  }
+
+  loadDirectory();
+</script>
+
+</body>
+</html>
